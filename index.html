@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hôm Nay Ăn Gì? - Vòng Quay Kiểu CS2</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body {
+            overflow-x: hidden;
+            background: #f9f3e6 url('./background.png') center/cover no-repeat;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 15px;
+        }
+
+        .main-wrapper {
+            width: 100%;
+            max-width: 1254px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 40px;
+        }
+
+        .category-menu {
+            display: flex;
+            width: min(100%, 900px);
+            gap: 8px;
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 15px;
+            border-radius: 50px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 5px;
+        }
+
+        .tab-btn {
+            background: #fff; color: #d85c00; border: 2px solid #ffe0b2;
+            padding: 6px 14px; border-radius: 30px; font-size: 13px; font-weight: 800;
+            cursor: pointer; transition: all 0.25s ease; outline: none;
+        }
+        .tab-btn:hover { background: #fff8f0; border-color: #ff9800; color: #e65100; }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #ff9800, #e65100);
+            color: #ffffff; border-color: #e65100;
+            box-shadow: 0 4px 10px rgba(230, 81, 0, 0.35);
+        }
+
+        .wheel-container {
+            position: relative;
+            width: min(1254px, 100vw);
+            height: min(1254px, 100vw);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: clamp(-270px, -21.5vw, -90px);
+        }
+
+        #wheel-canvas {
+            position: absolute;
+            width: 38.2%;
+            height: 38.2%;
+            top: calc(50% - 19.1% - 3%);
+            left: calc(50% - 19.1%);
+            border-radius: 50%;
+            transition: transform 4.5s cubic-bezier(0.15, 0.9, 0.15, 1);
+            z-index: 1;
+        }
+
+        .frame-img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .spin-btn-img {
+            width: min(453px, 36.1vw);
+            height: auto;
+            cursor: pointer;
+            z-index: 10;
+            transition: transform 0.2s ease, filter 0.2s ease;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+            position: relative;
+            margin-top: clamp(-310px, -24.7vw, -105px);
+        }
+        .spin-btn-img:hover { transform: scale(1.05); }
+        .spin-btn-img.disabled { pointer-events: none; filter: grayscale(0.6) opacity(0.7); }
+
+        .food-list-reference {
+            background: linear-gradient(135deg, rgba(30, 35, 45, 0.95), rgba(20, 22, 28, 0.95));
+            box-sizing: border-box;
+            border-radius: 16px;
+            padding: 22px;
+            margin-top: -20px;
+            max-width: 1100px;
+            width: 98%;
+            text-align: center;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+            border: 3px solid #ff9800;
+            z-index: 15;
+        }
+        .food-list-reference h4 {
+            color: #ffb74d;
+            margin-bottom: 15px;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 2px solid rgba(255, 152, 0, 0.3);
+            padding-bottom: 8px;
+        }
+        .food-items-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .food-tag {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(145deg, #2a313d, #1f242d);
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid #4a5568;
+            width: 155px;
+            height: 165px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .food-tag::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: #ff9800;
+            opacity: 0.7;
+        }
+
+        .food-tag:hover {
+            transform: translateY(-6px) scale(1.03);
+            border-color: #ff9800;
+            box-shadow: 0 10px 25px rgba(255, 152, 0, 0.4);
+            background: linear-gradient(145deg, #323b4b, #252c38);
+        }
+
+        .food-tag img {
+            width: 105px;
+            height: 105px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #ff9800;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            background: #111;
+        }
+
+        .food-tag span {
+            font-size: 14px;
+            color: #ffffff;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.2;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .result-modal {
+            position: fixed; top: 50%; left: 50%; z-index: 100;
+            width: min(92vw, 560px);
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: #1e232d; padding: 30px 35px; border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.7); text-align: center;
+            opacity: 0; pointer-events: none; transition: all 0.3s ease;
+            border: 4px solid #ff9800;
+        }
+        .result-modal.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+
+        .modal-close-x {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: #aaa;
+            font-size: 26px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+        .modal-close-x:hover { color: #ff9800; transform: scale(1.15); }
+
+        .result-modal h3 { font-size: 18px; color: #ffb74d; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .result-img {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid #ff9800;
+            margin: 10px auto;
+            box-shadow: 0 0 35px rgba(255, 152, 0, 0.7);
+            background: #111;
+        }
+
+        .action-buttons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .action-btn {
+            border: none;
+            padding: 10px 15px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.2s ease, filter 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            color: #fff;
+            height: 48px;
+        }
+        .action-btn:hover { transform: scale(1.03); filter: brightness(1.1); }
+        .action-btn svg { width: 22px; height: 22px; fill: currentColor; flex-shrink: 0; }
+
+        .action-btn img.logo-icon-only {
+            height: 26px;
+            width: auto;
+            object-fit: contain;
+            flex-shrink: 0;
+            border-radius: 4px;
+        }
+
+        .action-btn img#logo-shopee {
+            height: 38px;
+            width: auto;
+            background: #fff;
+            padding: 2px 4px;
+            border-radius: 6px;
+        }
+
+        .btn-select { background: linear-gradient(135deg, #ff9800, #e65100); grid-column: span 2; font-size: 16px; }
+        .btn-map { background: linear-gradient(135deg, #4285F4, #1967D2); }
+        .btn-shopee { background: linear-gradient(135deg, #ee4d2d, #d73211); }
+        .btn-share { background: linear-gradient(135deg, #00b0ff, #0091ea); grid-column: span 2; }
+
+        .copy-toast {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(0, 0, 0, 0.85);
+            color: #4caf50;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            border: 1px solid #4caf50;
+        }
+        .copy-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Khu vực Affiliate */
+        .region-box {
+            margin-top: 12px;
+            padding: 9px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,152,0,0.25);
+            color: #ddd;
+            font-size: 12px;
+        }
+        .region-box label { margin-right: 7px; color: #ffcc80; font-weight: 700; }
+        .region-select {
+            background: #252c38;
+            color: #fff;
+            border: 1px solid #ff9800;
+            border-radius: 8px;
+            padding: 5px 8px;
+            font-weight: 700;
+            outline: none;
+        }
+        .affiliate-note {
+            margin-top: 8px;
+            color: #aaa;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 700px) {
+            body { padding: 8px; min-height: 100dvh; }
+            .category-menu { width: 100%; gap: 5px; padding: 7px 8px; border-radius: 22px; }
+            .tab-btn { flex: 1 1 auto; min-height: 36px; padding: 6px 8px; font-size: clamp(10px, 2.8vw, 13px); }
+            .wheel-container { width: 140vw; height: 140vw; max-height: 140vw; margin-top: clamp(-135px, -29vw, -70px); flex-shrink: 0; }
+            .spin-btn-img { width: 42vw; max-width: 453px; margin-top: clamp(-145px, -29vw, -75px); }
+            .food-list-reference { width: 100%; padding: 12px 8px; margin-top: -5px; border-width: 2px; border-radius: 12px; }
+            .food-list-reference h4 { font-size: clamp(14px, 4vw, 18px); margin-bottom: 8px; }
+            .food-items-container { gap: 8px; padding: 4px; }
+            .food-tag { width: calc(25% - 8px); min-width: 0; height: auto; aspect-ratio: 155 / 165; padding: 7px; border-width: 1px; border-radius: 9px; }
+            .food-tag img { width: 72%; height: auto; aspect-ratio: 1; border-width: 2px; }
+            .food-tag span { font-size: clamp(10px, 2.8vw, 13px); }
+            .result-modal { width: calc(100vw - 28px); padding: 20px 14px; border-radius: 16px; }
+            .result-img { width: min(220px, 60vw); height: min(220px, 60vw); }
+            #result-name { font-size: clamp(20px, 5.5vw, 26px) !important; }
+            .region-box { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper" id="main-wrapper">
+    <div class="category-menu">
+        <button class="tab-btn active" onclick="switchCategory('sang', this)">Ăn Sáng</button>
+        <button class="tab-btn" onclick="switchCategory('trua_chieu', this)">Ăn Trưa + Chiều</button>
+        <button class="tab-btn" onclick="switchCategory('an_vat', this)">Ăn Vặt</button>
+        <button class="tab-btn" onclick="switchCategory('nuoc_uong', this)">Đồ Uống</button>
+        <button class="tab-btn" onclick="switchCategory('do_nhau', this)">Ăn Nhậu</button>
+    </div>
+
+    <div class="wheel-container" id="wheel-container">
+        <canvas id="wheel-canvas" width="1200" height="1200"></canvas>
+        <img src="./frame.png" class="frame-img" alt="Khung gỗ">
+    </div>
+
+    <img src="./button.png" id="spin-btn" class="spin-btn-img" alt="Bấm Xoay">
+
+    <div class="food-list-reference">
+        <h4>Danh Sách Món Ăn Trong Vòng Quay</h4>
+        <div class="food-items-container" id="food-items-list"></div>
+    </div>
+</div>
+
+<div id="result-modal" class="result-modal">
+    <button class="modal-close-x" onclick="closeModal()" title="Đóng">&times;</button>
+    <h3>🎉 Hôm nay bạn ăn món này nhé:</h3>
+    <img id="result-img" class="result-img" src="" alt="Món ăn">
+    <h2 id="result-name" style="color:#fff;font-size:26px;margin-top:2px;font-weight:900;text-shadow:0 2px 8px rgba(0,0,0,0.8);">...</h2>
+
+    <div class="action-buttons-grid">
+        <button class="action-btn btn-map" onclick="openGoogleMaps()" title="Tìm trên Google Maps">
+            <img src="" id="logo-map" class="logo-icon-only" alt="Google Maps">
+            Google Maps
+        </button>
+
+        <button class="action-btn btn-shopee" onclick="openShopeeFood()" title="Mở link ShopeeFood Affiliate">
+            <img src="" id="logo-shopee" class="logo-icon-only" alt="ShopeeFood">
+        </button>
+
+        <button class="action-btn btn-share" onclick="shareResult()">
+            <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+            Chia Sẻ Kết Quả
+        </button>
+
+        <button class="action-btn btn-select" onclick="closeModal()">
+            <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+            Chọn món này
+        </button>
+    </div>
+
+    <div class="region-box">
+        <label for="region-select">Khu vực Affiliate:</label>
+        <select id="region-select" class="region-select" onchange="changeRegion(this.value)">
+            <option value="auto">Tự động phát hiện</option>
+            <option value="hcm">Hồ Chí Minh</option>
+            <option value="hn">Hà Nội</option>
+        </select>
+        <div id="region-status" class="affiliate-note">Đang xác định khu vực...</div>
+    </div>
+
+    <div id="copy-toast" class="copy-toast">Đã copy link kết quả vào bộ nhớ tạm!</div>
+</div>
+
+<script>
+    const cacheBuster = `?v=${Date.now()}`;
+
+    document.getElementById('logo-map').src = `./Logo/${encodeURIComponent('Google Maps.png')}${cacheBuster}`;
+    document.getElementById('logo-shopee').src = `./Logo/ShopeeFood.png${cacheBuster}`;
+
+    // =========================================================
+    // DỮ LIỆU LẤY TỪ LinkAff(1).xlsx
+    // Mỗi món gồm: name, file, affiliate_hcm, affiliate_hn
+    // =========================================================
+    const categoriesData = {
+    "sang": [
+        {
+            "name": "Bánh Bao",
+            "file": "Bánh Bao.png",
+            "affiliate_hcm": "https://spf.shopee.vn/4LJfY854D1",
+            "affiliate_hn": "https://spf.shopee.vn/7ptXivIoGQ"
+        },
+        {
+            "name": "Bánh Canh Cua",
+            "file": "Bánh Canh Cua.png",
+            "affiliate_hcm": "https://spf.shopee.vn/gQNCdWGKw",
+            "affiliate_hn": "https://spf.shopee.vn/4fwVy5vzQr"
+        },
+        {
+            "name": "Bánh Canh Giò Heo",
+            "file": "Bánh Canh Giò Heo.png",
+            "affiliate_hcm": "https://spf.shopee.vn/6VOA9Z9cHo",
+            "affiliate_hn": "https://spf.shopee.vn/8pm4vxkIJ2"
+        },
+        {
+            "name": "Bánh Cuốn",
+            "file": "Bánh Cuốn.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9pec9Je7u4",
+            "affiliate_hn": "https://spf.shopee.vn/7ptXlhwQiu"
+        },
+        {
+            "name": "Bánh Đa Cua",
+            "file": "Bánh Đa Cua.png",
+            "affiliate_hcm": "https://spf.shopee.vn/1gIuQSVDsr",
+            "affiliate_hn": "https://spf.shopee.vn/80CxyAAAgh"
+        },
+        {
+            "name": "Bánh Mì",
+            "file": "Bánh Mì.png",
+            "affiliate_hcm": "https://spf.shopee.vn/905VA73bbj",
+            "affiliate_hn": "https://spf.shopee.vn/3g3yoMLOJE"
+        },
+        {
+            "name": "Bò Kho Bánh Mì",
+            "file": "Bò Kho Bánh Mì.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3VkYc9d3al",
+            "affiliate_hn": "https://spf.shopee.vn/1VzUEXQQQ2"
+        },
+        {
+            "name": "Bò Né",
+            "file": "Bò Né.png",
+            "affiliate_hcm": "https://spf.shopee.vn/AKasku2cx2",
+            "affiliate_hn": "https://spf.shopee.vn/W6x2uqPU4"
+        },
+        {
+            "name": "Bún Bò Huế",
+            "file": "Bún Bò Huế.png",
+            "affiliate_hcm": "https://spf.shopee.vn/BU6eWXnFi",
+            "affiliate_hn": "https://spf.shopee.vn/1AgSGkPoi"
+        },
+        {
+            "name": "Bún Cá",
+            "file": "Bún Cá.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3qNP1yggok",
+            "affiliate_hn": "https://spf.shopee.vn/9V1lmS660O"
+        },
+        {
+            "name": "Bún Chả",
+            "file": "Bún Chả.png",
+            "affiliate_hcm": "https://spf.shopee.vn/50ZMQEhwfY",
+            "affiliate_hn": "https://spf.shopee.vn/2LYbFOzPyf"
+        },
+        {
+            "name": "Bún Mọc",
+            "file": "Bún Mọc.png",
+            "affiliate_hcm": "https://spf.shopee.vn/6AlJp52Y9u",
+            "affiliate_hn": "https://spf.shopee.vn/7Adr0yfWp1"
+        },
+        {
+            "name": "Bún Riêu Cua",
+            "file": "Bún Riêu Cua.png",
+            "affiliate_hcm": "https://spf.shopee.vn/1Lg44KIgJ2",
+            "affiliate_hn": "https://spf.shopee.vn/3VkYeMH3dn"
+        },
+        {
+            "name": "Bún Thịt Nướng",
+            "file": "Bún Thịt Nướng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3g3yqxdwyO",
+            "affiliate_hn": "https://spf.shopee.vn/7KxHDkiEbo"
+        },
+        {
+            "name": "Bún Trộn Nam Bộ",
+            "file": "Bún Trộn Nam Bộ.png",
+            "affiliate_hcm": "https://spf.shopee.vn/7KxHDkiEbo",
+            "affiliate_hn": "https://spf.shopee.vn/8KpoPiaquZ"
+        },
+        {
+            "name": "Cháo Lòng",
+            "file": "Cháo Lòng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/5q8TRdTFZw",
+            "affiliate_hn": "https://spf.shopee.vn/5q8TS73j53"
+        },
+        {
+            "name": "Cháo Sườn",
+            "file": "Cháo Sườn.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3qNP4o2OQ5",
+            "affiliate_hn": "https://spf.shopee.vn/AUuJ16Zwh0"
+        },
+        {
+            "name": "Cơm Tấm",
+            "file": "Cơm Tấm.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9fLC5FR2Oo",
+            "affiliate_hn": "https://spf.shopee.vn/3qNP8ZdN3t"
+        },
+        {
+            "name": "Hủ Tiếu",
+            "file": "Hủ Tiếu.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2LYbLsv0aO",
+            "affiliate_hn": "https://spf.shopee.vn/AKassdG3of"
+        },
+        {
+            "name": "Mì Quảng",
+            "file": "Mì Quảng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9zy2U57bO0",
+            "affiliate_hn": "https://spf.shopee.vn/qjnZHsYRs"
+        },
+        {
+            "name": "Miến Gà",
+            "file": "Miến Gà.png",
+            "affiliate_hcm": "https://spf.shopee.vn/AUuJ57PDGj",
+            "affiliate_hn": "https://spf.shopee.vn/5q8TWbNUNc"
+        },
+        {
+            "name": "Miến Lươn",
+            "file": "Miến Lươn.png",
+            "affiliate_hcm": "https://spf.shopee.vn/1gIuZ0Sw5k",
+            "affiliate_hn": "https://spf.shopee.vn/9zy2UO8nM2"
+        },
+        {
+            "name": "Phở",
+            "file": "Phở.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3B7iMPJzYU",
+            "affiliate_hn": "https://spf.shopee.vn/1VzUNPTSqu"
+        },
+        {
+            "name": "Xôi Gà",
+            "file": "Xôi Gà.png",
+            "affiliate_hcm": "https://spf.shopee.vn/40gpM4DFC4",
+            "affiliate_hn": "https://spf.shopee.vn/8AWOJmEO62"
+        },
+        {
+            "name": "Xôi Xéo",
+            "file": "Xôi Xéo.png",
+            "affiliate_hcm": "https://spf.shopee.vn/AKastom1yz",
+            "affiliate_hn": "https://spf.shopee.vn/8fSeuoROQL"
+        }
+    ],
+    "trua_chieu": [
+        {
+            "name": "Bánh Canh Cua",
+            "file": "Bánh Canh Cua.png",
+            "affiliate_hcm": "https://spf.shopee.vn/gQNCdWGKw",
+            "affiliate_hn": "https://spf.shopee.vn/4fwVy5vzQr"
+        },
+        {
+            "name": "Bánh Canh Giò Heo",
+            "file": "Bánh Canh Giò Heo.png",
+            "affiliate_hcm": "https://spf.shopee.vn/6VOA9Z9cHo",
+            "affiliate_hn": "https://spf.shopee.vn/8pm4vxkIJ2"
+        },
+        {
+            "name": "Bánh Đa Cua",
+            "file": "Bánh Đa Cua.png",
+            "affiliate_hcm": "https://spf.shopee.vn/1gIuQSVDsr",
+            "affiliate_hn": "https://spf.shopee.vn/80CxyAAAgh"
+        },
+        {
+            "name": "Bánh Mì Kebab",
+            "file": "Bánh Mì Kebab.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9AOxFlFIMI",
+            "affiliate_hn": "https://spf.shopee.vn/5VVet6nqqq"
+        },
+        {
+            "name": "Bò Bít Tết",
+            "file": "Bò Bít Tết.png",
+            "affiliate_hcm": "https://spf.shopee.vn/4LJhV19R6l",
+            "affiliate_hn": "https://spf.shopee.vn/9fLDqqAj8k"
+        },
+        {
+            "name": "Bò Kho Bánh Mì",
+            "file": "Bò Kho Bánh Mì.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3VkYc9d3al",
+            "affiliate_hn": "https://spf.shopee.vn/1VzUEXQQQ2"
+        },
+        {
+            "name": "Bò Lúc Lắc",
+            "file": "Bò Lúc Lắc.png",
+            "affiliate_hcm": "https://spf.shopee.vn/qjpKhsNGE",
+            "affiliate_hn": "https://spf.shopee.vn/30oJuj9eCt"
+        },
+        {
+            "name": "Bún Chả",
+            "file": "Bún Chả.png",
+            "affiliate_hcm": "https://spf.shopee.vn/50ZMQEhwfY",
+            "affiliate_hn": "https://spf.shopee.vn/2LYbFOzPyf"
+        },
+        {
+            "name": "Bún Đậu Mắm Tôm",
+            "file": "Bún Đậu Mắm Tôm.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3VkYe2gjfK",
+            "affiliate_hn": "https://spf.shopee.vn/1Lg448ReYl"
+        },
+        {
+            "name": "Bún Mắm",
+            "file": "Bún Mắm.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3qNQuLaQEO",
+            "affiliate_hn": "https://spf.shopee.vn/113FXAAvZs"
+        },
+        {
+            "name": "Burger Bò",
+            "file": "Burger Bò.png",
+            "affiliate_hcm": "https://spf.shopee.vn/6L4lt1boEX",
+            "affiliate_hn": "https://spf.shopee.vn/AKaueOveNX"
+        },
+        {
+            "name": "Cơm Canh Kimchi",
+            "file": "Cơm Canh Kimchi.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2Vs3K31i7w",
+            "affiliate_hn": "https://spf.shopee.vn/7AdsseDzmL"
+        },
+        {
+            "name": "Cơm Chiên Hải Sản",
+            "file": "Cơm Chiên Hải Sản.png",
+            "affiliate_hcm": "https://spf.shopee.vn/4B0HJCIZl4",
+            "affiliate_hn": "https://spf.shopee.vn/8V9GTCT2op"
+        },
+        {
+            "name": "Cơm Chiên Kimchi",
+            "file": "Cơm Chiên Kimchi.png",
+            "affiliate_hcm": "https://spf.shopee.vn/7VGjHdKl9h",
+            "affiliate_hn": "https://spf.shopee.vn/5VVetzelTT"
+        },
+        {
+            "name": "Cơm Gà Hải Nam",
+            "file": "Cơm Gà Hải Nam.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9V1nfRIADm",
+            "affiliate_hn": "https://spf.shopee.vn/6AlLhM91AO"
+        },
+        {
+            "name": "Cơm Gà Hội An",
+            "file": "Cơm Gà Hội An.png",
+            "affiliate_hcm": "https://spf.shopee.vn/7AdstGyzv0",
+            "affiliate_hn": "https://spf.shopee.vn/2LYd8Q3K1t"
+        },
+        {
+            "name": "Cơm Gà Xối Mỡ",
+            "file": "Cơm Gà Xối Mỡ.png",
+            "affiliate_hcm": "https://spf.shopee.vn/gQP9PplUh",
+            "affiliate_hn": "https://spf.shopee.vn/BU8YWGhTT"
+        },
+        {
+            "name": "Cơm Gà",
+            "file": "Cơm Gà.png",
+            "affiliate_hcm": "https://spf.shopee.vn/gQP9PplUh",
+            "affiliate_hn": "https://spf.shopee.vn/BU8YWGhTT"
+        },
+        {
+            "name": "Cơm Tấm",
+            "file": "Cơm Tấm.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9fLC5FR2Oo",
+            "affiliate_hn": "https://spf.shopee.vn/3qNP8ZdN3t"
+        },
+        {
+            "name": "Cơm Trộn",
+            "file": "Cơm Trộn.png",
+            "affiliate_hcm": "https://spf.shopee.vn/4Vd7izFnYa",
+            "affiliate_hn": "https://spf.shopee.vn/3VkaXAmy4S"
+        },
+        {
+            "name": "Cơm Văn Phòng",
+            "file": "Cơm Văn Phòng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/qjpMKs4Cr",
+            "affiliate_hn": "https://spf.shopee.vn/8KpqIDNIUd"
+        },
+        {
+            "name": "Gỏi Cuốn",
+            "file": "Gỏi Cuốn.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9pee51ssAs",
+            "affiliate_hn": "https://spf.shopee.vn/5AsoWU1vOj"
+        },
+        {
+            "name": "Hủ Tiếu",
+            "file": "Hủ Tiếu.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2LYbLsv0aO",
+            "affiliate_hn": "https://spf.shopee.vn/AKassdG3of"
+        },
+        {
+            "name": "Kimbap",
+            "file": "Kimbap.png",
+            "affiliate_hcm": "https://spf.shopee.vn/1VzW9nUl3B",
+            "affiliate_hn": "https://spf.shopee.vn/8AWQ65JULK"
+        },
+        {
+            "name": "Mì Cay",
+            "file": "Mì Cay.png",
+            "affiliate_hcm": "https://spf.shopee.vn/7fa9VDjPSH",
+            "affiliate_hn": "https://spf.shopee.vn/40gr8VOFy3"
+        },
+        {
+            "name": "Mì Quảng",
+            "file": "Mì Quảng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9zy2U57bO0",
+            "affiliate_hn": "https://spf.shopee.vn/qjnZHsYRs"
+        },
+        {
+            "name": "Mì Tương Đen",
+            "file": "Mì Tương Đen.png",
+            "affiliate_hcm": "https://spf.shopee.vn/1qcMYaPjVS",
+            "affiliate_hn": "https://spf.shopee.vn/1VzWA055aw"
+        },
+        {
+            "name": "Mì Vịt Tiềm",
+            "file": "Mì Vịt Tiềm.png",
+            "affiliate_hcm": "https://spf.shopee.vn/7fa9VOfrN4",
+            "affiliate_hn": "https://spf.shopee.vn/7ptZhjV01R"
+        },
+        {
+            "name": "Mì Xào Hải Sản",
+            "file": "Mì Xào Hải Sản.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3VkaXzXnWM",
+            "affiliate_hn": "https://spf.shopee.vn/9zy4I020RD"
+        },
+        {
+            "name": "Mì Ý Bò Bằm",
+            "file": "Mì Ý Bò Bằm.png",
+            "affiliate_hcm": "https://spf.shopee.vn/40gr94LsF2",
+            "affiliate_hn": "https://spf.shopee.vn/4fwXwKxqOl"
+        },
+        {
+            "name": "Miến Gà",
+            "file": "Miến Gà.png",
+            "affiliate_hcm": "https://spf.shopee.vn/AUuJ57PDGj",
+            "affiliate_hn": "https://spf.shopee.vn/5q8TWbNUNc"
+        },
+        {
+            "name": "Nem Nướng",
+            "file": "Nem Nướng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9KiNUy4zQW",
+            "affiliate_hn": "https://spf.shopee.vn/4Vd7k6erN6"
+        },
+        {
+            "name": "Nui Xào Bò",
+            "file": "Nui Xào Bò.png",
+            "affiliate_hcm": "https://spf.shopee.vn/20vmlaBIsU",
+            "affiliate_hn": "https://spf.shopee.vn/3qNQwynQiu"
+        },
+        {
+            "name": "Pad Thai",
+            "file": "Pad Thai.png",
+            "affiliate_hcm": "https://spf.shopee.vn/AUuKtHw6ZV",
+            "affiliate_hn": "https://spf.shopee.vn/9AOxIs0RSY"
+        },
+        {
+            "name": "Phở Cuốn",
+            "file": "Phở Cuốn.png",
+            "affiliate_hcm": "https://spf.shopee.vn/70KSiwT8JI",
+            "affiliate_hn": "https://spf.shopee.vn/50ZOLILQwt"
+        },
+        {
+            "name": "Phở",
+            "file": "Phở.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3B7iMPJzYU",
+            "affiliate_hn": "https://spf.shopee.vn/1VzUNPTSqu"
+        },
+        {
+            "name": "Phở Gà",
+            "file": "Phở Gà.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3B7iMPJzYU",
+            "affiliate_hn": "https://spf.shopee.vn/1VzUNPTSqu"
+        },
+        {
+            "name": "Pizza",
+            "file": "Pizza.png",
+            "affiliate_hcm": "https://spf.shopee.vn/gQPBMbGB5",
+            "affiliate_hn": "https://spf.shopee.vn/4Vd7kQegd8"
+        }
+    ],
+    "an_vat": [
+        {
+            "name": "Bánh Bông Lan Trứng Muối",
+            "file": "Bánh Bông Lan Trứng Muối.png",
+            "affiliate_hcm": "https://spf.shopee.vn/40gplzepeM",
+            "affiliate_hn": "https://spf.shopee.vn/4qFwlZb8Rp"
+        },
+        {
+            "name": "Bánh Chuối Nướng",
+            "file": "Bánh Chuối Nướng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/7fa88umpPp",
+            "affiliate_hn": "https://spf.shopee.vn/1Ah0r20Xx"
+        },
+        {
+            "name": "Bánh Giò",
+            "file": "Bánh Giò.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2qUsO9udnw",
+            "affiliate_hn": "https://spf.shopee.vn/905VjXVx9t"
+        },
+        {
+            "name": "Bánh Su Kem",
+            "file": "Bánh Su Kem.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9V1mKXDO5V",
+            "affiliate_hn": "https://spf.shopee.vn/8KpowQHhyp"
+        },
+        {
+            "name": "Bánh Tráng Nướng",
+            "file": "Bánh Tráng Nướng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/5q8U0peDtE",
+            "affiliate_hn": "https://spf.shopee.vn/BU7GRqwcK"
+        },
+        {
+            "name": "Bánh Tráng Trộn",
+            "file": "Bánh Tráng Trộn.png",
+            "affiliate_hcm": "https://spf.shopee.vn/AUuJbg12gM",
+            "affiliate_hn": "https://spf.shopee.vn/70KRRPwAqW"
+        },
+        {
+            "name": "Bánh Trứng Nướng",
+            "file": "Bánh Trứng Nướng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2qUsY1ad5A",
+            "affiliate_hn": "https://spf.shopee.vn/4B0H1lOl3y"
+        },
+        {
+            "name": "Bột Chiên",
+            "file": "Bột Chiên.png",
+            "affiliate_hcm": "https://spf.shopee.vn/4LJhEAhhNu",
+            "affiliate_hn": "https://spf.shopee.vn/3LRA2MoxZH"
+        },
+        {
+            "name": "Cá Viên Chiên",
+            "file": "Cá Viên Chiên.png",
+            "affiliate_hcm": "https://spf.shopee.vn/50ZO1UBeSN",
+            "affiliate_hn": "https://spf.shopee.vn/5q8V12Zdqn"
+        },
+        {
+            "name": "Chân Gà Xả Tắc",
+            "file": "Chân Gà Xả Tắc.png",
+            "affiliate_hcm": "https://spf.shopee.vn/8pm6aczrJX",
+            "affiliate_hn": "https://spf.shopee.vn/7VGj0CnDR4"
+        },
+        {
+            "name": "Chè Bưởi",
+            "file": "Chè Bưởi.png",
+            "affiliate_hcm": "https://spf.shopee.vn/4LJhEQGGfr",
+            "affiliate_hn": "https://spf.shopee.vn/60RvDVYkUD"
+        },
+        {
+            "name": "Chè Sương Sa Hạt Lựu",
+            "file": "Chè Sương Sa Hạt Lựu.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9fLDaI27Ix",
+            "affiliate_hn": "https://spf.shopee.vn/60RvDVYkUD"
+        },
+        {
+            "name": "Chè Thái",
+            "file": "Chè Thái.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9fLDaI27Ix",
+            "affiliate_hn": "https://spf.shopee.vn/60RvDVYkUD"
+        },
+        {
+            "name": "Cơm Cháy",
+            "file": "Cơm Cháy.png",
+            "affiliate_hcm": "https://spf.shopee.vn/40gqpxDtwn",
+            "affiliate_hn": "https://spf.shopee.vn/AAHUBJKos5"
+        },
+        {
+            "name": "Cút Lộn Xào Me",
+            "file": "Cút Lộn Xào Me.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3LRA2nwowj",
+            "affiliate_hn": "https://spf.shopee.vn/4LJhEgmN4L"
+        },
+        {
+            "name": "Hột Vịt Lộn",
+            "file": "Hột Vịt Lộn.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3LRA2nwowj",
+            "affiliate_hn": "https://spf.shopee.vn/4LJhEgmN4L"
+        },
+        {
+            "name": "Kem Bơ",
+            "file": "Kem Bơ.png",
+            "affiliate_hcm": "https://spf.shopee.vn/5fp4px5v64",
+            "affiliate_hn": "https://spf.shopee.vn/AKauOYIksE"
+        },
+        {
+            "name": "Kem Dừa",
+            "file": "Kem Dừa.png",
+            "affiliate_hcm": "https://spf.shopee.vn/5VVedhmRiY",
+            "affiliate_hn": "https://spf.shopee.vn/8pm6bqzgLH"
+        },
+        {
+            "name": "Kem Xôi",
+            "file": "Kem Xôi.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3qNQehQmEt",
+            "affiliate_hn": "https://spf.shopee.vn/6AlLR1H9f8"
+        },
+        {
+            "name": "Khoai Lang Nướng",
+            "file": "Khoai Lang Nướng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9pednosdxA",
+            "affiliate_hn": "https://spf.shopee.vn/1VzVsXoEWH"
+        },
+        {
+            "name": "Nem Chua Rán",
+            "file": "Nem Chua Rán.png",
+            "affiliate_hcm": "https://spf.shopee.vn/6fhc282MQj",
+            "affiliate_hn": "https://spf.shopee.vn/30oJfP18Rx"
+        },
+        {
+            "name": "Phô Mai Que",
+            "file": "Phô Mai Que.png",
+            "affiliate_hcm": "https://spf.shopee.vn/6L4ldc9FWD",
+            "affiliate_hn": "https://spf.shopee.vn/8Kpq1FGnpK"
+        },
+        {
+            "name": "Sữa Chua Nếp Cẩm",
+            "file": "Sữa Chua Nếp Cẩm.png",
+            "affiliate_hcm": "https://spf.shopee.vn/4B0H3lECIU",
+            "affiliate_hn": "https://spf.shopee.vn/8V9GDjgWTZ"
+        },
+        {
+            "name": "Xiên Viên Chiên",
+            "file": "Xiên Viên Chiên.png",
+            "affiliate_hcm": "https://spf.shopee.vn/50ZO1UBeSN",
+            "affiliate_hn": "https://spf.shopee.vn/5q8V12Zdqn"
+        },
+        {
+            "name": "Xoài Lắc",
+            "file": "Xoài Lắc.png",
+            "affiliate_hcm": "https://spf.shopee.vn/905WojjxIq",
+            "affiliate_hn": "https://spf.shopee.vn/5q8V2vk7sp"
+        }
+    ],
+    "nuoc_uong": [
+        {
+            "name": "Trà Sữa",
+            "file": "Trà Sữa.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2Vs1azTbTI",
+            "affiliate_hn": "https://spf.shopee.vn/2qUrziyqFI"
+        },
+        {
+            "name": "Cà Phê Muối",
+            "file": "Cà Phê Muối.png",
+            "affiliate_hcm": "https://spf.shopee.vn/6VOAMWIasw",
+            "affiliate_hn": "https://spf.shopee.vn/gQNPpMfYz"
+        },
+        {
+            "name": "Cà Phê Sữa",
+            "file": "Cà Phê Sữa.png",
+            "affiliate_hcm": "https://spf.shopee.vn/W6xDdTtUy",
+            "affiliate_hn": "https://spf.shopee.vn/905VLLCDkR"
+        },
+        {
+            "name": "Trà Đào Cam Sả",
+            "file": "Trà Đào Cam Sả.png",
+            "affiliate_hcm": "https://spf.shopee.vn/1gIucujds8",
+            "affiliate_hn": "https://spf.shopee.vn/9pecLxMCSh"
+        },
+        {
+            "name": "Trà Tắc",
+            "file": "Trà Tắc.png",
+            "affiliate_hcm": "https://spf.shopee.vn/60Rtmz7pDt",
+            "affiliate_hn": "https://spf.shopee.vn/3B7iPneH6S"
+        },
+        {
+            "name": "Nước Mía",
+            "file": "Nước Mía.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2qUs1HvTWa",
+            "affiliate_hn": "https://spf.shopee.vn/8pm5AL2xWX"
+        },
+        {
+            "name": "Trà Mãng Cầu",
+            "file": "Trà Mãng Cầu.png",
+            "affiliate_hcm": "https://spf.shopee.vn/qjndiDac9",
+            "affiliate_hn": "https://spf.shopee.vn/LnX2p0rpZ"
+        },
+        {
+            "name": "Trái Cây Dầm",
+            "file": "Trái Cây Dầm.png",
+            "affiliate_hcm": "https://spf.shopee.vn/7ptXyhEZGQ",
+            "affiliate_hn": "https://spf.shopee.vn/9V1lxmu4v8"
+        },
+        {
+            "name": "Rau Má Đậu Xanh",
+            "file": "Rau Má Đậu Xanh.png",
+            "affiliate_hcm": "https://spf.shopee.vn/30oIDv92Fx",
+            "affiliate_hn": "https://spf.shopee.vn/gQNRf3190"
+        },
+        {
+            "name": "Sinh Tố Bơ",
+            "file": "Sinh Tố Bơ.png",
+            "affiliate_hcm": "https://spf.shopee.vn/8fSeyTAHnR",
+            "affiliate_hn": "https://spf.shopee.vn/4Vd60q38Rs"
+        },
+        {
+            "name": "Trà Xanh Latte",
+            "file": "Trà Xanh Latte.png",
+            "affiliate_hcm": "https://spf.shopee.vn/3VkYpikdjH",
+            "affiliate_hn": "https://spf.shopee.vn/5LCD17XpnN"
+        },
+        {
+            "name": "Cà Phê Trứng",
+            "file": "Cà Phê Trứng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/BU6riSsIH",
+            "affiliate_hn": "https://spf.shopee.vn/1qcKqnwQKL"
+        },
+        {
+            "name": "Hồng Trà",
+            "file": "Hồng Trà.png",
+            "affiliate_hcm": "https://spf.shopee.vn/4Vd68Eu3WN",
+            "affiliate_hn": "https://spf.shopee.vn/1VzUYmydVA"
+        },
+        {
+            "name": "Trà Sữa Thái",
+            "file": "Trà Sữa Thái.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2BFBNA7q9w",
+            "affiliate_hn": "https://spf.shopee.vn/9AOvi3olrM"
+        },
+        {
+            "name": "Nước Sâm",
+            "file": "Nước Sâm.png",
+            "affiliate_hcm": "https://spf.shopee.vn/4B0FlAw8wc",
+            "affiliate_hn": "https://spf.shopee.vn/LnXC9wJiV"
+        },
+        {
+            "name": "Sữa Đậu Nành",
+            "file": "Sữa Đậu Nành.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9fLCJYpeJY",
+            "affiliate_hn": "https://spf.shopee.vn/1VzUaZyHC5"
+        },
+        {
+            "name": "Nước Dừa",
+            "file": "Nước Dừa.png",
+            "affiliate_hcm": "https://spf.shopee.vn/6L4kWKpbta",
+            "affiliate_hn": "https://spf.shopee.vn/1gIuxnmz3d"
+        },
+        {
+            "name": "Bạc Xỉu",
+            "file": "Bạc Xỉu.png",
+            "affiliate_hcm": "https://spf.shopee.vn/W6xDdTtUy",
+            "affiliate_hn": "https://spf.shopee.vn/905VLLCDkR"
+        },
+        {
+            "name": "Nước Chanh Dây",
+            "file": "Nước Chanh Dây.png",
+            "affiliate_hcm": "https://spf.shopee.vn/4LJg8ygU1P",
+            "affiliate_hn": "https://spf.shopee.vn/4Vd6LKvCjP"
+        },
+        {
+            "name": "Ép Ổi",
+            "file": "Ép Ổi.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2LYblRB7sQ",
+            "affiliate_hn": "https://spf.shopee.vn/AKatIAsAUe"
+        },
+        {
+            "name": "Ép Dưa Hấu",
+            "file": "Ép Dưa Hấu.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2LYblRB7sQ",
+            "affiliate_hn": "https://spf.shopee.vn/AKatIAsAUe"
+        },
+        {
+            "name": "Nước Cam Ép",
+            "file": "Nước Cam Ép.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2LYblRB7sQ",
+            "affiliate_hn": "https://spf.shopee.vn/AKatIAsAUe"
+        },
+        {
+            "name": "Ép Cà Rốt",
+            "file": "Ép Cà Rốt.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2LYblRB7sQ",
+            "affiliate_hn": "https://spf.shopee.vn/AKatIAsAUe"
+        },
+        {
+            "name": "Nước Chanh",
+            "file": "Nước Chanh.png",
+            "affiliate_hcm": "https://spf.shopee.vn/4qFwkDNhXD",
+            "affiliate_hn": "https://spf.shopee.vn/70KRKEwIYp"
+        },
+        {
+            "name": "Sữa Chua Đá",
+            "file": "Sữa Chua Đá.png",
+            "affiliate_hcm": "https://spf.shopee.vn/30oIYzIFI0",
+            "affiliate_hn": "https://spf.shopee.vn/1gIuyZV6gA"
+        },
+        {
+            "name": "Milo Dầm",
+            "file": "Milo Dầm.png",
+            "affiliate_hcm": "https://spf.shopee.vn/1VzUmLh7w8",
+            "affiliate_hn": "https://spf.shopee.vn/80CyWKQ1tz"
+        },
+        {
+            "name": "Cacao Đá",
+            "file": "Cacao Đá.png",
+            "affiliate_hcm": "https://spf.shopee.vn/7fa87nxeT3",
+            "affiliate_hn": "https://spf.shopee.vn/1gIuynxxha"
+        },
+        {
+            "name": "Sâm Bí Đao",
+            "file": "Sâm Bí Đao.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9pechtHuop",
+            "affiliate_hn": "https://spf.shopee.vn/80CyWYBMvK"
+        }
+    ],
+    "do_nhau": [
+        {
+            "name": "Bò Nướng",
+            "file": "Bò Nướng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/1qcMIh684m",
+            "affiliate_hn": "https://spf.shopee.vn/8pm6dZwx0K"
+        },
+        {
+            "name": "Cà Tím Nướng",
+            "file": "Cà Tím Nướng.png",
+            "affiliate_hcm": "https://shopeefood.vn/ho-chi-minh/danh-sach-dia-diem-giao-tan-noi?q=c%C3%A0%20t%C3%ADm%20n%C6%B0%E1%BB%9Bng",
+            "affiliate_hn": "https://shopeefood.vn/ha-noi/danh-sach-dia-diem-giao-tan-noi?q=c%C3%A0%20t%C3%ADm%20n%C6%B0%E1%BB%9Bng"
+        },
+        {
+            "name": "Chân Gà Nướng",
+            "file": "Chân Gà Nướng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/1Lg5hteobo",
+            "affiliate_hn": "https://spf.shopee.vn/6VOBrPKKWS"
+        },
+        {
+            "name": "Chim Cút Nướng",
+            "file": "Chim Cút Nướng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/6q12G4Cy4y",
+            "affiliate_hn": "https://spf.shopee.vn/6VOBrSr0eU"
+        },
+        {
+            "name": "Đậu Tẩm Hành",
+            "file": "Đậu Tẩm Hành.png",
+            "affiliate_hcm": "https://spf.shopee.vn/50ZO4mnkzG",
+            "affiliate_hn": "https://spf.shopee.vn/50ZO4mnkzG"
+        },
+        {
+            "name": "Dồi Sụn Nướng",
+            "file": "Dồi Sụn Nướng.png",
+            "affiliate_hcm": "https://spf.shopee.vn/20vmVO9013",
+            "affiliate_hn": "https://spf.shopee.vn/8V9GFLf6gY"
+        },
+        {
+            "name": "Gỏi Bò Bóp Thấu",
+            "file": "Gỏi Bò Bóp Thấu.png",
+            "affiliate_hcm": "https://spf.shopee.vn/70KSSdwnwG",
+            "affiliate_hn": "https://spf.shopee.vn/4fwXgNNV7V"
+        },
+        {
+            "name": "Gỏi Xoài Khô Bò",
+            "file": "Gỏi Xoài Khô Bò.png",
+            "affiliate_hcm": "https://spf.shopee.vn/LnYWSGAVM",
+            "affiliate_hn": "https://spf.shopee.vn/60RvGtLLXp"
+        },
+        {
+            "name": "Hàu Nướng Mỡ Hành",
+            "file": "Hàu Nướng Mỡ Hành.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9KiNF5fpHo",
+            "affiliate_hn": "https://spf.shopee.vn/8fSgS0wX9g"
+        },
+        {
+            "name": "Kho Quẹt",
+            "file": "Kho Quẹt.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2LYcuQO2RJ",
+            "affiliate_hn": "https://spf.shopee.vn/2LYcuQO2RJ"
+        },
+        {
+            "name": "Lẩu Thái",
+            "file": "Lẩu Thái.png",
+            "affiliate_hcm": "https://spf.shopee.vn/AAHUEvDaP7",
+            "affiliate_hn": "https://spf.shopee.vn/5LCEU33oDw"
+        },
+        {
+            "name": "Mực Hấp Gừng Sả",
+            "file": "Mực Hấp Gừng Sả.png",
+            "affiliate_hcm": "https://spf.shopee.vn/6L4lfx4VM2",
+            "affiliate_hn": "https://spf.shopee.vn/1VzVv6D1Sp"
+        },
+        {
+            "name": "Mực Khô Nướng Xé",
+            "file": "Mực Khô Nướng Xé.png",
+            "affiliate_hcm": "https://spf.shopee.vn/7ptZSnnMgs",
+            "affiliate_hn": "https://spf.shopee.vn/3qNQhSj4rg"
+        },
+        {
+            "name": "Mực Nướng Sa Tế",
+            "file": "Mực Nướng Sa Tế.png",
+            "affiliate_hcm": "https://spf.shopee.vn/6AlLUzRmDo",
+            "affiliate_hn": "https://spf.shopee.vn/2Vs38GWSoB"
+        },
+        {
+            "name": "Nghêu Hấp Sả",
+            "file": "Nghêu Hấp Sả.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9KiNF5fpHo",
+            "affiliate_hn": "https://spf.shopee.vn/3qNQj1FWGM"
+        },
+        {
+            "name": "Râu Mực Chiên Mắm",
+            "file": "Râu Mực Chiên Mắm.png",
+            "affiliate_hcm": "https://spf.shopee.vn/2Vs38dRmKJ",
+            "affiliate_hn": "https://spf.shopee.vn/W6ykyQwex"
+        },
+        {
+            "name": "Rau Muống Xào Tỏi",
+            "file": "Rau Muống Xào Tỏi.png",
+            "affiliate_hcm": "https://spf.shopee.vn/6L4lhkSCpS",
+            "affiliate_hn": "https://spf.shopee.vn/6VOBu6JHLh"
+        },
+        {
+            "name": "Sò Điệp Nướng Mỡ Hành",
+            "file": "Sò Điệp Nướng Mỡ Hành.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9KiNF5fpHo",
+            "affiliate_hn": "https://spf.shopee.vn/1Lg5kizUHR"
+        },
+        {
+            "name": "Sò Huyết Xào Me",
+            "file": "Sò Huyết Xào Me.png",
+            "affiliate_hcm": "https://spf.shopee.vn/9KiNF5fpHo",
+            "affiliate_hn": "https://spf.shopee.vn/9zy44lLGbx"
+        },
+        {
+            "name": "Sụn Gà Chiên Nước Mắm",
+            "file": "Sụn Gà Chiên Nước Mắm.png",
+            "affiliate_hcm": "https://spf.shopee.vn/4qFxwjnLIA",
+            "affiliate_hn": "https://spf.shopee.vn/W6ymoT5Nm"
+        },
+        {
+            "name": "Tôm Hấp Bia",
+            "file": "Tôm Hấp Bia.png",
+            "affiliate_hcm": "https://spf.shopee.vn/1BMfav04JD",
+            "affiliate_hn": "https://spf.shopee.vn/1VzVzYkefn"
+        },
+        {
+            "name": "Vịt Cháy Tỏi",
+            "file": "Vịt Cháy Tỏi.png",
+            "affiliate_hcm": "https://spf.shopee.vn/7Adsn0FLHm",
+            "affiliate_hn": "https://spf.shopee.vn/3LRAE02Bhz"
+        }
+    ]
+};
+
+    const folderMap = {
+        sang: "Food",
+        trua_chieu: "Ăn Trưa+Chiều",
+        an_vat: "Ăn Vặt",
+        nuoc_uong: "Drinks",
+        do_nhau: "Đồ Nhậu"
+    };
+
+    let currentCategoryKey = 'sang';
+    let currentFoodsData = categoriesData[currentCategoryKey];
+    let currentFolder = folderMap[currentCategoryKey];
+    let selectedFoodName = "";
+    let selectedFood = null;
+
+    const bgColors = ["#e74c3c","#e67e22","#f1c40f","#2ecc71","#1abc9c","#9b59b6","#3498db","#e91e63"];
+    const spinAudio = new Audio(`./Sound/spinwheel.wav${cacheBuster}`);
+    const canvas = document.getElementById('wheel-canvas');
+    const ctx = canvas.getContext('2d');
+    const spinBtn = document.getElementById('spin-btn');
+
+    let currentRotation = 0;
+    let isSpinning = false;
+
+    // =========================================================
+    // KHU VỰC AFFILIATE
+    // auto = dùng GPS nếu người dùng cho phép
+    // hcm = ép link HCM
+    // hn = ép link Hà Nội
+    // =========================================================
+    let selectedRegion = localStorage.getItem('affiliateRegion') || 'auto';
+    document.getElementById('region-select').value = selectedRegion;
+
+    function setRegionStatus(text) {
+        document.getElementById('region-status').innerText = text;
+    }
+
+    function changeRegion(region) {
+        selectedRegion = region;
+        localStorage.setItem('affiliateRegion', region);
+
+        if (region === 'hcm') {
+            setRegionStatus('Đang dùng link Affiliate Hồ Chí Minh.');
+        } else if (region === 'hn') {
+            setRegionStatus('Đang dùng link Affiliate Hà Nội.');
+        } else {
+            setRegionStatus('Đang dùng GPS để xác định khu vực...');
+            detectRegion();
+        }
+    }
+
+    function detectRegion() {
+        if (!navigator.geolocation) {
+            selectedRegion = 'hcm';
+            document.getElementById('region-select').value = 'hcm';
+            setRegionStatus('Trình duyệt không hỗ trợ GPS → tạm dùng link HCM.');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            position => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                // Vùng nhận diện gần đúng cho TP.HCM
+                const isHCM = lat >= 10.30 && lat <= 11.25 && lng >= 106.25 && lng <= 107.10;
+
+                // Vùng nhận diện gần đúng cho Hà Nội
+                const isHN = lat >= 20.55 && lat <= 21.55 && lng >= 105.25 && lng <= 106.20;
+
+                if (isHCM) {
+                    selectedRegion = 'hcm';
+                    document.getElementById('region-select').value = 'auto';
+                    setRegionStatus('Đã xác định: Hồ Chí Minh → dùng Affiliate HCM.');
+                } else if (isHN) {
+                    selectedRegion = 'hn';
+                    document.getElementById('region-select').value = 'auto';
+                    setRegionStatus('Đã xác định: Hà Nội → dùng Affiliate HN.');
+                } else {
+                    // Không thuộc HCM/HN: dùng HCM làm mặc định cho hệ thống hiện tại.
+                    selectedRegion = 'hcm';
+                    document.getElementById('region-select').value = 'auto';
+                    setRegionStatus('Không thuộc HCM/HN → tạm dùng Affiliate HCM.');
+                }
+            },
+            () => {
+                selectedRegion = 'hcm';
+                document.getElementById('region-select').value = 'auto';
+                setRegionStatus('Không cấp quyền vị trí → tạm dùng Affiliate HCM.');
+            },
+            { enableHighAccuracy: false, timeout: 8000, maximumAge: 3600000 }
+        );
+    }
+
+    function getAffiliateUrl(food) {
+        if (!food) return '';
+
+        if (selectedRegion === 'hn') return food.affiliate_hn || food.affiliate_hcm || '';
+        return food.affiliate_hcm || food.affiliate_hn || '';
+    }
+
+    function loadImage(src) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = src;
+        });
+    }
+
+    async function drawWheel() {
+        const totalSlices = currentFoodsData.length;
+        const imgDistance = 465;
+        const imgSize = 120;
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = centerX - 5;
+        const sliceAngle = (Math.PI * 2) / totalSlices;
+
+        const images = await Promise.all(
+            currentFoodsData.map(item =>
+                loadImage(`./${currentFolder}/${encodeURIComponent(item.file)}${cacheBuster}`)
+            )
+        );
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        images.forEach((img, i) => {
+            const startAngle = i * sliceAngle;
+            const endAngle = startAngle + sliceAngle;
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.closePath();
+
+            const grad = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, radius);
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(1, bgColors[i % bgColors.length]);
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(startAngle + sliceAngle / 2);
+
+            if (img) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(imgDistance, 0, imgSize / 2, 0, Math.PI * 2);
+                ctx.clip();
+                ctx.drawImage(img, imgDistance - imgSize / 2, -imgSize / 2, imgSize, imgSize);
+                ctx.restore();
+
+                ctx.beginPath();
+                ctx.arc(imgDistance, 0, imgSize / 2, 0, Math.PI * 2);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        });
+    }
+
+    function updateFoodListReference() {
+        const container = document.getElementById('food-items-list');
+        container.innerHTML = '';
+
+        currentFoodsData.forEach(food => {
+            const tag = document.createElement('div');
+            tag.className = 'food-tag';
+
+            const imgPath = `./${currentFolder}/${encodeURIComponent(food.file)}`;
+            tag.innerHTML = `
+                <img src="${imgPath}" alt="${escapeHtml(food.name)}" onerror="this.style.display='none'">
+                <span>${escapeHtml(food.name)}</span>
+            `;
+            container.appendChild(tag);
+        });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function switchCategory(key, btnElement) {
+        if (isSpinning) return;
+
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        currentCategoryKey = key;
+        currentFoodsData = categoriesData[key];
+        currentFolder = folderMap[key];
+
+        canvas.style.transition = 'none';
+        canvas.style.transform = 'rotate(0deg)';
+        currentRotation = 0;
+
+        updateFoodListReference();
+        drawWheel();
+    }
+
+    spinBtn.addEventListener('click', () => {
+        if (isSpinning) return;
+
+        isSpinning = true;
+        spinBtn.classList.add('disabled');
+
+        const duration = 4.5;
+
+        if (spinAudio.duration) {
+            spinAudio.playbackRate = spinAudio.duration / duration;
+        }
+
+        spinAudio.currentTime = 0;
+        spinAudio.play().catch(() => {});
+
+        const totalSlices = currentFoodsData.length;
+        const selectedIndex = Math.floor(Math.random() * totalSlices);
+
+        const degreesPerSlice = 360 / totalSlices;
+        const targetSliceCenter = selectedIndex * degreesPerSlice + (degreesPerSlice / 2);
+
+        const extraRounds = 360 * 8;
+        currentRotation += extraRounds
+            + (360 - (currentRotation % 360))
+            - targetSliceCenter
+            - 90;
+
+        canvas.style.transition = `transform ${duration}s cubic-bezier(0.15, 0.9, 0.15, 1)`;
+        canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+        setTimeout(() => {
+            isSpinning = false;
+            spinBtn.classList.remove('disabled');
+            spinAudio.pause();
+
+            selectedFood = currentFoodsData[selectedIndex];
+            selectedFoodName = selectedFood.name;
+
+            document.getElementById('result-name').innerText = selectedFoodName;
+            document.getElementById('result-img').src =
+                `./${currentFolder}/${encodeURIComponent(selectedFood.file)}`;
+
+            document.getElementById('result-modal').classList.add('show');
+        }, duration * 1000);
+    });
+
+    function closeModal() {
+        document.getElementById('result-modal').classList.remove('show');
+    }
+
+    // =========================================================
+    // GOOGLE MAPS
+    // =========================================================
+    function openGoogleMaps() {
+        if (!selectedFoodName) return;
+
+        const query = encodeURIComponent(selectedFoodName);
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const mapUrl = `https://www.google.com/maps/search/${query}/@${lat},${lng},15z`;
+                    window.open(mapUrl, '_blank');
+                },
+                () => {
+                    window.open(`https://www.google.com/maps/search/${query}`, '_blank');
+                },
+                { timeout: 10000 }
+            );
+        } else {
+            window.open(`https://www.google.com/maps/search/${query}`, '_blank');
+        }
+    }
+
+    // =========================================================
+    // SHOPEEFOOD AFFILIATE
+    // =========================================================
+    function openShopeeFood() {
+        if (!selectedFood) return;
+
+        const affiliateUrl = getAffiliateUrl(selectedFood);
+
+        if (affiliateUrl) {
+            window.open(affiliateUrl, '_blank', 'noopener,noreferrer');
+        } else {
+            // Fallback nếu sau này có món không có Affiliate.
+            const query = encodeURIComponent(selectedFoodName);
+            window.open(`https://shopeefood.vn/s?q=${query}`, '_blank');
+        }
+    }
+
+    // =========================================================
+    // CHIA SẺ
+    // =========================================================
+    function shareResult() {
+        if (!selectedFoodName) return;
+
+        const shareText =
+            `Hôm nay vòng quay chỉ định mình ăn món: ${selectedFoodName}! Vào quay ngay nào!`;
+
+        if (navigator.share) {
+            navigator.share({
+                title: 'Hôm Nay Ăn Gì?',
+                text: shareText,
+                url: window.location.href
+            }).catch(() => {});
+        } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(`${shareText} - ${window.location.href}`)
+                .then(() => {
+                    const toast = document.getElementById('copy-toast');
+                    toast.classList.add('show');
+
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 2000);
+                });
+        }
+    }
+
+    window.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    updateFoodListReference();
+    drawWheel();
+
+    // Tự động xác định khu vực khi website mở.
+    if (selectedRegion === 'auto') {
+        detectRegion();
+    } else if (selectedRegion === 'hcm') {
+        setRegionStatus('Đang dùng link Affiliate Hồ Chí Minh.');
+    } else if (selectedRegion === 'hn') {
+        setRegionStatus('Đang dùng link Affiliate Hà Nội.');
+    }
+</script>
+</body>
+</html>

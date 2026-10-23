@@ -283,7 +283,7 @@
         .btn-map-half { background: #3B82F6; flex: 1; }
         .btn-share-half { background: #374151; flex: 1; color: #e5e7eb; }
 
-        /* Nút Chọn món này - Viền Cam mỏng */
+        /* Nút Chọn món này */
         .btn-select-outline { 
             background: transparent; 
             border: 1px solid #F97316; 
@@ -409,7 +409,7 @@
             </button>
         </div>
 
-        <!-- Nút 3: Chọn món này (CŨNG MỞ LINK SHOPEE) -->
+        <!-- Nút 3: Chọn món này -->
         <button class="action-btn btn-select-outline" onclick="openShopeeFood()">
             <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
             Chọn món này
@@ -417,13 +417,12 @@
     </div>
 
     <div class="region-box">
-        <label for="region-select">Khu vực Affiliate:</label>
+        <label for="region-select">Khu vực:</label>
         <select id="region-select" class="region-select" onchange="changeRegion(this.value)">
-            <option value="auto">Tự động phát hiện</option>
             <option value="hcm">Hồ Chí Minh</option>
             <option value="hn">Hà Nội</option>
         </select>
-        <div id="region-status" class="affiliate-note">Đang xác định khu vực...</div>
+        <div id="region-status" class="affiliate-note"></div>
     </div>
 
     <div id="copy-toast" class="copy-toast">Đã copy link kết quả vào bộ nhớ tạm!</div>
@@ -437,7 +436,6 @@
 
     // =========================================================
     // DỮ LIỆU LẤY TỪ LinkAff(1).xlsx
-    // Mỗi món gồm: name, file, affiliate_hcm, affiliate_hn
     // =========================================================
     const categoriesData = {
     "sang": [
@@ -1296,8 +1294,6 @@
 
     // =========================================================
     // URL / ASSET PATH
-    // Encode từng phần của đường dẫn để chạy ổn định trên Vercel,
-    // đặc biệt với folder có dấu + và tên file tiếng Việt.
     // =========================================================
     function assetPath(folder, file) {
         return `./${encodeURIComponent(folder)}/${encodeURIComponent(file)}`;
@@ -1322,12 +1318,12 @@
     let isSpinning = false;
 
     // =========================================================
-    // KHU VỰC AFFILIATE
-    // auto = dùng GPS nếu người dùng cho phép
-    // hcm = ép link HCM
-    // hn = ép link Hà Nội
+    // KHU VỰC AFFILIATE (Mặc định HCM, không hỏi GPS)
     // =========================================================
-    let selectedRegion = localStorage.getItem('affiliateRegion') || 'auto';
+    let selectedRegion = localStorage.getItem('affiliateRegion') || 'hcm';
+    if (selectedRegion !== 'hn' && selectedRegion !== 'hcm') {
+        selectedRegion = 'hcm';
+    }
     document.getElementById('region-select').value = selectedRegion;
 
     function setRegionStatus(text) {
@@ -1337,63 +1333,11 @@
     function changeRegion(region) {
         selectedRegion = region;
         localStorage.setItem('affiliateRegion', region);
-
-        if (region === 'hcm') {
-            setRegionStatus('Đang dùng link Affiliate Hồ Chí Minh.');
-        } else if (region === 'hn') {
-            setRegionStatus('Đang dùng link Affiliate Hà Nội.');
-        } else {
-            setRegionStatus('Đang dùng GPS để xác định khu vực...');
-            detectRegion();
-        }
-    }
-
-    function detectRegion() {
-        if (!navigator.geolocation) {
-            selectedRegion = 'hcm';
-            document.getElementById('region-select').value = 'hcm';
-            setRegionStatus('Trình duyệt không hỗ trợ GPS → tạm dùng link HCM.');
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            position => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-
-                // Vùng nhận diện gần đúng cho TP.HCM
-                const isHCM = lat >= 10.30 && lat <= 11.25 && lng >= 106.25 && lng <= 107.10;
-
-                // Vùng nhận diện gần đúng cho Hà Nội
-                const isHN = lat >= 20.55 && lat <= 21.55 && lng >= 105.25 && lng <= 106.20;
-
-                if (isHCM) {
-                    selectedRegion = 'hcm';
-                    document.getElementById('region-select').value = 'auto';
-                    setRegionStatus('Đã xác định: Hồ Chí Minh → dùng Affiliate HCM.');
-                } else if (isHN) {
-                    selectedRegion = 'hn';
-                    document.getElementById('region-select').value = 'auto';
-                    setRegionStatus('Đã xác định: Hà Nội → dùng Affiliate HN.');
-                } else {
-                    // Không thuộc HCM/HN: dùng HCM làm mặc định cho hệ thống hiện tại.
-                    selectedRegion = 'hcm';
-                    document.getElementById('region-select').value = 'auto';
-                    setRegionStatus('Không thuộc HCM/HN → tạm dùng Affiliate HCM.');
-                }
-            },
-            () => {
-                selectedRegion = 'hcm';
-                document.getElementById('region-select').value = 'auto';
-                setRegionStatus('Không cấp quyền vị trí → tạm dùng Affiliate HCM.');
-            },
-            { enableHighAccuracy: false, timeout: 8000, maximumAge: 3600000 }
-        );
+        setRegionStatus(`Đang dùng link Affiliate ${region === 'hn' ? 'Hà Nội' : 'Hồ Chí Minh'}.`);
     }
 
     function getAffiliateUrl(food) {
         if (!food) return '';
-
         if (selectedRegion === 'hn') return food.affiliate_hn || food.affiliate_hcm || '';
         return food.affiliate_hcm || food.affiliate_hn || '';
     }
@@ -1559,33 +1503,16 @@
     }
 
     // =========================================================
-    // GOOGLE MAPS
+    // GOOGLE MAPS (Tìm kiếm trực tiếp, không hỏi GPS)
     // =========================================================
     function openGoogleMaps() {
         if (!selectedFoodName) return;
-
         const query = encodeURIComponent(selectedFoodName);
-
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                position => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    const mapUrl = `https://www.google.com/maps/search/${query}/@${lat},${lng},15z`;
-                    window.open(mapUrl, '_blank');
-                },
-                () => {
-                    window.open(`https://www.google.com/maps/search/${query}`, '_blank');
-                },
-                { timeout: 10000 }
-            );
-        } else {
-            window.open(`https://www.google.com/maps/search/${query}`, '_blank');
-        }
+        window.open(`https://www.google.com/maps/search/${query}`, '_blank');
     }
 
     // =========================================================
-    // SHOPEEFOOD AFFILIATE
+    // SHOPEEFOOD AFFILIATE (Chuyển trang trực tiếp, chống chặn popup)
     // =========================================================
     function openShopeeFood() {
         if (!selectedFood) return;
@@ -1593,11 +1520,11 @@
         const affiliateUrl = getAffiliateUrl(selectedFood);
 
         if (affiliateUrl) {
-            window.open(affiliateUrl, '_blank', 'noopener,noreferrer');
+            // Mở trực tiếp bằng location.href giúp deep-link mở app Shopee trơn tru
+            window.location.href = affiliateUrl;
         } else {
-            // Fallback nếu sau này có món không có Affiliate.
             const query = encodeURIComponent(selectedFoodName);
-            window.open(`https://shopeefood.vn/s?q=${query}`, '_blank');
+            window.location.href = `https://shopeefood.vn/s?q=${query}`;
         }
     }
 
@@ -1682,18 +1609,10 @@
 
     updateFoodListReference();
     drawWheel();
-
-    // Nếu link có kết quả được chia sẻ, mở đúng món ngay khi vào website.
     openSharedResult();
 
-    // Tự động xác định khu vực khi website mở.
-    if (selectedRegion === 'auto') {
-        detectRegion();
-    } else if (selectedRegion === 'hcm') {
-        setRegionStatus('Đang dùng link Affiliate Hồ Chí Minh.');
-    } else if (selectedRegion === 'hn') {
-        setRegionStatus('Đang dùng link Affiliate Hà Nội.');
-    }
+    // Hiển thị trạng thái khu vực mặc định
+    setRegionStatus(`Đang dùng link Affiliate ${selectedRegion === 'hn' ? 'Hà Nội' : 'Hồ Chí Minh'}.`);
 </script>
 </body>
 </html>
